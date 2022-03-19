@@ -1,0 +1,71 @@
+version: 2.1
+orbs:
+  ruby: circleci/ruby@0.1.2
+
+jobs:
+  build:
+    docker:
+      - image: circleci/ruby:2.7.1-node
+      - image: circleci/mongo:4.4.3
+    executor: ruby/default
+    steps:
+      - checkout
+      - ruby/bundle-install
+
+      - run:
+          name: Yarn Install
+          command: yarn install --frozen-lockfile
+
+
+  cucumber:
+    docker:
+      - image: circleci/ruby:2.7.1-node
+      - image: circleci/mongo:4.4.3
+    executor: ruby/default
+    steps:
+      - checkout
+      - ruby/bundle-install
+
+      - run:
+          name: Yarn Install
+          command: yarn install --frozen-lockfile
+
+      - run:
+          name: Cucumber Features
+          command: |
+            mkdir -p ~/cucumber
+            bundle exec cucumber --format junit --out ~/cucumber/junit.xml
+          when: always
+      - store_test_results:
+          path: ~/cucumber
+      - store_artifacts:
+          path: ~/cucumber
+
+  rspec:
+    docker:
+      - image: circleci/ruby:2.7.1-node
+      - image: circleci/mongo:4.4.3
+    executor: ruby/default
+    steps:
+      - checkout
+      - ruby/bundle-install
+
+      - run:
+          name: Yarn Install
+          command: yarn install --frozen-lockfile
+
+      - run:
+          name: RSpec Tests
+          command: |
+            mkdir -p ~/rspec
+            bundle exec rspec --format progress --format RspecJunitFormatter -o ~/rspec/rspec.xml
+          when: always
+      - store_test_results:
+          path: ~/rspec
+
+workflows:
+  build_and_test:
+    jobs:
+      - build
+      - cucumber
+      - rspec
